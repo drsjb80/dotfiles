@@ -1,0 +1,8 @@
+[Nemo Action]
+Active=true
+Name=Open in qView
+Comment=Open selected image with qView
+Exec=/home/beaty/.local/share/nemo/actions/qview-helper.sh "%F"
+Icon-Name=qview
+Selection=s
+Extensions=any;
