@@ -19,9 +19,9 @@ ARCH=$(/usr/bin/uname -p)
 export ARCH
 
 possible="$HOME/bin \
-    $HOME/.rbenv/shims \
     /opt/local/bin \
     /opt/homebrew/bin \
+    /opt/podman/bin \
     /usr/local/bin \
     /usr/local/sbin \
     /usr/bin \
@@ -32,6 +32,8 @@ possible="$HOME/bin \
     /local/sbin \
     /etc/alternatives \
     /Applications/Docker.app/Contents/Resources/bin \
+    /Users/beatys/.ebcli-virtual-env/executables \
+    /Users/beatys/Applications/Docker.app/Contents/Resources/bin \
     "
 
 extraman="/usr/share/man"
@@ -88,4 +90,9 @@ then
     eval "$(rbenv init -)"
 fi
 
+. "$HOME/.cargo/env"
+
 echo "Done with .bash_profile"
+
+# Created by `pipx` on 2026-01-25 21:55:26
+export PATH="$PATH:/Users/beatys/.local/bin"

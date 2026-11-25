@@ -13,7 +13,7 @@ alias lt='lshelper -t'
 alias llt='lshelper -lt'
 
 # --- misc ---
-alias fixff='cd ~/Library/Application\ Support/Firefox/Profiles/*.default/sessionstore-backups'
+alias fixff='cd ~/Library/Application\ Support/Firefox/Profiles/*.default-esr/sessionstore-backups && cp previous.jsonlz4 ../sessionstore.jsonlz4'
 alias shrug='echo ¯\\\_\(ツ\)_/¯'
 alias listening='netstat -anp tcp | grep "LISTEN"'
 alias potm='wget -q -O - http://www.moongiant.com/phase/today/ | grep "Moon Age" | sed -e "s/.*\"Moon Age:/Moon Age:/" -e "s/\".*//"'
@@ -22,7 +22,7 @@ alias green="find . -name '*.gif' -exec dirname '{}' ';' | uniq | xargs ~/bin/fi
 # --- removal helpers ---
 alias rmnonimage='rm $(file * | grep -v image | sed -e "s/:.*//")'
 alias rmhtml='rm $(file * | grep HTML | sed -e "s/:.*//")'
-alias rmthumbs="find -E . -regex '.*\.(jpg|gif|png)' -a -size -7k -exec rm '{}' ';'"
+alias rmthumbs="find . -name '*._img*' -print -exec rm '{}' ';'"
 
 # --- git ---
 alias git-color='git -c color.ui=always'
@@ -58,6 +58,7 @@ alias killspring='ps ax | grep spring | colrm 8 | xargs kill'
 
 # --- languages / tools ---
 alias p='python3'
+alias venv='python3 -m venv venv'
 alias ut='python3 -m unittest'
 alias be='bundle exec'
 alias beep='echo -n ""'

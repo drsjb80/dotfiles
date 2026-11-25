@@ -17,13 +17,27 @@ elif [[ $(uname) == Linux ]]; then
 fi
 
 # --- navigation ---------------------------------------------------------------
-function cd () { builtin cd "$*" && lshelper .; }
+# auto-activate a ./venv when entering a directory that has one
+function ifvenv () {
+    if [ -e venv ]
+    then
+        echo "---- Virtual environment found, activating ----"
+        source venv/bin/activate
+    fi
+}
+
+function cd () {
+    builtin cd "$*"
+    ifvenv
+    lshelper .
+}
 function pd () {
     if [[ $# == 0 ]]
     then
-        pushd || return
+        popd || return
     else
-        pushd "$*" || return
+        pushd "$*"
+        ifvenv
     fi
 }
 
@@ -80,7 +94,9 @@ function unzipper () {
     done
 }
 
-function rmemptydir () { find "$*" -depth -type d -empty -exec rmdir '{}' ';' ; }
+function rmemptydir () { find "$*" -depth -type d -empty -print -a -exec rmdir '{}' ';' ; }
+
+function zip () { command zip -r "$1".zip "$1" -x '*.git*'; }
 
 # --- conversions --------------------------------------------------------------
 function doc2pdf () {
@@ -100,7 +116,7 @@ function m4a2mp3 () {
     done
 }
 
-function md { showdown makehtml -i "$1" -o "${1%%.md}".html --tables --simplifiedAutoLink; }
+function md { showdown makehtml -i "$1" -o "${1%%.md}".html -c tables; }
 
 # --- image info ---------------------------------------------------------------
 function gifinfo () { giftopnm -verbose "$@" > /dev/null; }
