@@ -1,8 +1,25 @@
+/*
+ * Thunderbird  userChrome.css
+ *
+ * To take effect this file must live at  <profile>/chrome/userChrome.css  and
+ * the following must be set in Settings > General > Config Editor (fix.sh's
+ * userChrome() does both):
+ *     toolkit.legacyUserProfileCustomizations.stylesheets = true
+ *
+ * The Supernova UI (Thunderbird 115+) renamed many selectors, and userChrome
+ * is officially unsupported, so if a rule stops applying, inspect the live UI
+ * with the Developer Toolbox and update the selector.
+ * Last checked against Thunderbird 128 ESR (2025).
+ */
 @namespace url(http://www.mozilla.org/keymaster/gatekeeper/there.is.only.xul);
 
-/* Global UI font */
-* { font-size: 11pt !important; } 
+/* Larger, more readable font throughout the Thunderbird chrome. */
+* { font-size: 11pt !important; }
 
-/* toolkit.legacyUserProfileCustomizations.stylesheets */
-#navigator-toolbox { height: 150px !important; }
-
+/*
+ * Optional: force the height of the top toolbar/header area.  The old rule
+ * targeted #navigator-toolbox, which does not exist in Thunderbird; the
+ * Supernova toolbar is #unifiedToolbarContainer.  Uncomment to use it:
+ *
+ * #unifiedToolbarContainer { height: 100px !important; }
+ */

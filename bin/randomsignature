@@ -1,13 +1,32 @@
 #! /usr/bin/env bash
+# Pick a random signature from ~/.signatures (one per line) and copy a full
+# sign-off to the clipboard.  Works on macOS (pbcopy) and Linux (wl-copy,
+# xclip, or copyq); falls back to stdout if none of those are available.
 
-IFS=$'\n\r'
-sigs=($(cat ~/.signatures))
-length=$((${#sigs[@]}-1))
-echo $length >> /tmp/debug
-divisor=$((32767 / ${length}))
-echo $divisor >> /tmp/debug
-subscript=$(($RANDOM / ${divisor}))
-echo $subscript >> /tmp/debug
-echo -e "--\n\
-Dr. Steve Beaty, Professor, Chair, MSU Denver Computer Sciences\n\
-${sigs[${subscript}]}" | pbcopy
+set -euo pipefail
+
+mapfile -t sigs < "${HOME}/.signatures"
+if [[ ${#sigs[@]} -eq 0 ]]; then
+    echo "randomsignature: ${HOME}/.signatures is empty" >&2
+    exit 1
+fi
+
+sig=${sigs[RANDOM % ${#sigs[@]}]}
+
+read -r -d '' text <<EOF || true
+--
+Dr. Steve Beaty, Professor, Chair, MSU Denver Computer Sciences
+${sig}
+EOF
+
+if command -v pbcopy > /dev/null 2>&1; then
+    printf '%s\n' "$text" | pbcopy
+elif command -v wl-copy > /dev/null 2>&1; then
+    printf '%s\n' "$text" | wl-copy
+elif command -v xclip > /dev/null 2>&1; then
+    printf '%s\n' "$text" | xclip -selection clipboard
+elif command -v copyq > /dev/null 2>&1; then
+    printf '%s\n' "$text" | copyq copy -
+else
+    printf '%s\n' "$text"
+fi

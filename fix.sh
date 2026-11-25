@@ -1,36 +1,75 @@
 #! /bin/bash
 #! /bin/bash -x
 
+# Install model: this repo is checked out with $HOME as its working tree (a
+# shallow clone into ~), so .bashrc, bin/*, .config/autostart/* etc. are
+# already in place -- there is no linking step.  This script only (a) applies
+# desktop/terminal settings and (b) copies the few files that must live
+# outside the home tree (browser userChrome.css, Thunderbird msgFilterRules).
+
 # dconf watch /
 
 shopt -s nullglob
 
-# X window manager etc. settings
+# where this repo lives, so we can find files to copy regardless of checkout
+# location (~, ~/src/dotfiles, ...).
+DOTFILES="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Is a gsettings schema installed?  Checks both fixed and relocatable schemas
+# (the terminal Profile schema is relocatable and only appears in the latter).
+# SCHEMAS is populated once by WMsettings.
+function has_schema () {
+    local s
+    for s in "${SCHEMAS[@]}"; do [[ "$s" == "$1" ]] && return 0; done
+    return 1
+}
+
+# gsettings set, but only when the schema exists, so each call is a silent
+# no-op on a desktop that doesn't ship it (e.g. a labwc-only Raspberry Pi).
+# Strips any :/relocatable/path/ suffix before checking.
+function gset () {
+    has_schema "${1%%:*}" && gsettings set "$@"
+}
+
+# X window manager etc. settings (Cinnamon / GNOME Terminal via gsettings)
 function WMsettings () {
-    UUIDS=$(gsettings get org.gnome.Terminal.ProfilesList list | tr -d "',")
-    PALETTE="['rgb(7,54,66)', 'rgb(0,0,0)', 'rgb(85,85,85)', 'rgb(181,137,0)', 'rgb(38,139,210)', 'rgb(211,54,130)', 'rgb(42,161,152)', 'rgb(238,232,213)', 'rgb(0,43,54)', 'rgb(203,75,22)', 'rgb(88,110,117)', 'rgb(101,123,131)', 'rgb(131,148,150)', 'rgb(108,113,196)', 'rgb(147,161,161)', 'rgb(253,246,227)']"
+    command -v gsettings > /dev/null 2>&1 || return 0
+    mapfile -t SCHEMAS < <(gsettings list-schemas 2>/dev/null; gsettings list-relocatable-schemas 2>/dev/null)
+
+    # Solarized palette, standard 16-colour order (base/accent colours).
+    PALETTE="['#073642', '#dc322f', '#859900', '#b58900', '#268bd2', '#d33682', '#2aa198', '#eee8d5', '#002b36', '#cb4b16', '#586e75', '#657b83', '#839496', '#6c71c4', '#93a1a1', '#fdf6e3']"
     A='org.gnome.Terminal.Legacy.Profile:/org/gnome/terminal/legacy/profiles:/:'
 
-    # kinda 2-d array
-    a=(cursor-blink-mode background-color foreground-color palette default-size-rows)
-    b=(off '#DFDBC3' '#000000' "${PALETTE}" 44)
-    for UUID in ${UUIDS}
-    do
-        length=${#a[@]}
-        for (( i=0; i<length; i++ ))
+    # GNOME Terminal profiles: block cursor, Solarized light (base3 bg / base00
+    # fg), an 80x44 window.
+    if has_schema org.gnome.Terminal.ProfilesList
+    then
+        UUIDS=$(gsettings get org.gnome.Terminal.ProfilesList list | tr -d "',")
+        # kinda 2-d array
+        a=(cursor-blink-mode cursor-shape use-theme-colors background-color foreground-color palette default-size-columns default-size-rows)
+        b=(off block false '#fdf6e3' '#657b83' "${PALETTE}" 80 44)
+        for UUID in ${UUIDS}
         do
-            gsettings set "${A}${UUID}"/ "${a[$i]}" "${b[$i]}"
+            length=${#a[@]}
+            for (( i=0; i<length; i++ ))
+            do
+                gset "${A}${UUID}"/ "${a[$i]}" "${b[$i]}"
+            done
         done
-    done
-    gsettings set org.gnome.desktop.interface cursor-blink false
-    gsettings set org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
+    fi
+
+    gset org.gnome.desktop.interface cursor-blink false
+    gset org.gnome.desktop.wm.preferences button-layout ":minimize,maximize,close"
+
+    # Caps Lock becomes another Control key.
+    gset org.gnome.desktop.input-sources xkb-options "['ctrl:nocaps']"
 
     WM=org.cinnamon.desktop.keybindings.wm
     a=( close minimize switch-to-workspace-right switch-to-workspace-left )
     b=( "['<Super>q']" "['<Super>m', '<Super>h']" "['<Super>Right']" "['<Super>Left']" )
     for (( i=0; i<${#a[@]}; i++ ))
     do
-        gsettings set "${WM}" "${a[$i]}" "${b[$i]}"
+        gset "${WM}" "${a[$i]}" "${b[$i]}"
     done
 
     a=( auto-raise focus-mode )
@@ -38,30 +77,92 @@ function WMsettings () {
     WM=org.cinnamon.desktop.wm.preferences
     for (( i=0; i<${#a[@]}; i++ ))
     do
-        gsettings set "${WM}" "${a[$i]}" "${b[$i]}"
+        gset "${WM}" "${a[$i]}" "${b[$i]}"
     done
 }
 
-function dotsNbins () {
-    mkdir ~/bin 2> /dev/null
+# Raspberry Pi / labwc (Wayland) equivalents of the Cinnamon gsettings above:
+#   - rc.xml <focus>:   focus-follows-mouse + raise-on-focus (sloppy/auto-raise)
+#   - environment:      Caps Lock becomes another Control key
+# No-op unless labwc is installed.  Both files use the FIRST copy labwc finds,
+# so we seed each from the system default to keep the distro's settings, then
+# patch in place.  Idempotent: re-running does nothing once the values are set.
+function LabwcSettings () {
+    command -v labwc > /dev/null 2>&1 || return 0
 
-    FILES=".vimrc .gtkrc-2.0 .prsst.yml .bash_profile .bashrc .signatures .screenrc bin/*"
+    mkdir -p ~/.config/labwc
 
-    for FILE in ${FILES}
-    do
-        rm -f ~/"${FILE}" 2> /dev/null
-        ln ~/src/dotfiles/"${FILE}" ~/"${FILE}"
-    done
+    # --- rc.xml: focus-follows-mouse + raise-on-focus -------------------------
+    RC=~/.config/labwc/rc.xml
+    if [[ ! -e ${RC} ]]
+    then
+        if [[ -e /etc/xdg/labwc/rc.xml ]]
+        then
+            cp /etc/xdg/labwc/rc.xml "${RC}"
+        else
+            printf '<?xml version="1.0"?>\n<labwc_config>\n</labwc_config>\n' > "${RC}"
+        fi
+    fi
+
+    if grep -q '<followMouse>yes</followMouse>' "${RC}" &&
+       grep -q '<raiseOnFocus>yes</raiseOnFocus>' "${RC}"
+    then
+        echo "labwc focus already set in ${RC}"
+    else
+        echo "setting labwc focus in ${RC}"
+
+        FOCUS='  <focus>\n'
+        FOCUS+='    <followMouse>yes</followMouse>\n'
+        FOCUS+='    <followMouseRequiresMovement>no</followMouseRequiresMovement>\n'
+        FOCUS+='    <raiseOnFocus>yes</raiseOnFocus>\n'
+        FOCUS+='  </focus>'
+
+        # drop any existing (partial or stale) <focus> block, then insert ours
+        # just before the closing root tag.
+        sed -i -e '/<focus>/,/<\/focus>/d' "${RC}"
+        sed -i -e "s|</labwc_config>|${FOCUS}\n</labwc_config>|" "${RC}"
+    fi
+
+    # --- environment: Caps Lock -> Control ------------------------------------
+    ENV=~/.config/labwc/environment
+    if [[ ! -e ${ENV} && -e /etc/xdg/labwc/environment ]]
+    then
+        cp /etc/xdg/labwc/environment "${ENV}"
+    fi
+    touch "${ENV}"
+
+    if grep -q '^XKB_DEFAULT_OPTIONS=.*ctrl:nocaps' "${ENV}"
+    then
+        echo "labwc caps-lock already set in ${ENV}"
+    elif grep -q '^XKB_DEFAULT_OPTIONS=' "${ENV}"
+    then
+        # add to the existing comma-separated option list
+        sed -i -E 's/^(XKB_DEFAULT_OPTIONS=.*)$/\1,ctrl:nocaps/' "${ENV}"
+        echo "added ctrl:nocaps to XKB_DEFAULT_OPTIONS in ${ENV}"
+    else
+        echo 'XKB_DEFAULT_OPTIONS=ctrl:nocaps' >> "${ENV}"
+        echo "set XKB_DEFAULT_OPTIONS=ctrl:nocaps in ${ENV}"
+    fi
 }
 
-function autostarts () {
-    mkdir -p ~/.config/autostart 2> /dev/null
+# macOS equivalents of WMsettings.
+function MacSettings () {
+    # Caps Lock becomes another Control key.  hidutil applies this for the
+    # current login session; to make it survive reboots, install a LaunchAgent
+    # that runs this same command at login.
+    hidutil property --set \
+        '{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000039,"HIDKeyboardModifierMappingDst":0x7000000E0}]}' \
+        > /dev/null
 
-    for FILE in .config/autostart/*
-    do
-        rm -f ~/"${FILE}" 2> /dev/null
-        ln ~/src/dotfiles/"${FILE}" ~/"${FILE}"
-    done
+    # Terminal.app: Solarized Light with a block cursor and an 80x44 window.
+    PROFILE="Solarized Light ansi"
+    if ! defaults read com.apple.Terminal "Window Settings" 2> /dev/null | grep -q "${PROFILE}"
+    then
+        open "${DOTFILES}/SolarizedLight.terminal"
+        sleep 1
+    fi
+    defaults write com.apple.Terminal "Default Window Settings" -string "${PROFILE}"
+    defaults write com.apple.Terminal "Startup Window Settings" -string "${PROFILE}"
 }
 
 function mozilla_prefs () {
@@ -88,12 +189,11 @@ function userChrome () {
        mozilla_prefs "${STYLE}" "${PREFS}" "${VALUE}"
 
        FILE="${CHROME}"/userChrome.css
-       rm "${FILE}" 2> /dev/null
        if [[ "${DIR}" =~ .*[Tt]hunderbird.* ]]
        then
-           ln ~/src/dotfiles/TBuserChrome.css "${FILE}"
+           cp -f "${DOTFILES}/TBuserChrome.css" "${FILE}"
         else
-           ln ~/src/dotfiles/FFuserChrome.css "${FILE}"
+           cp -f "${DOTFILES}/FFuserChrome.css" "${FILE}"
 
            STYLE='browser.backspace_action'
            VALUE=2
@@ -108,8 +208,7 @@ function outlook () {
         echo "${DIR}"
 
         FILE="${DIR}"/msgFilterRules.dat
-        rm "${FILE}" 2> /dev/null
-        ln ~/src/dotfiles/msgFilterRules.dat "${FILE}"
+        cp -f "${DOTFILES}/msgFilterRules.dat" "${FILE}"
     done
 
 }
@@ -127,9 +226,10 @@ outlook "${OL[@]}"
 if [[ $(uname) == Linux ]]
 then
     WMsettings
+    LabwcSettings
+elif [[ $(uname) == Darwin ]]
+then
+    MacSettings
 fi
-
-dotsNbins
-autostarts
 
 # vim: wm=0
