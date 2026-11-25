@@ -193,7 +193,7 @@ function userChrome () {
        then
            cp -f "${DOTFILES}/TBuserChrome.css" "${FILE}"
         else
-           cp -f "${DOTFILES}/FFuserChrome.css" "${FILE}"
+           cp -f "${DOTFILES}/userChrome.css" "${FILE}"
 
            STYLE='browser.backspace_action'
            VALUE=2
