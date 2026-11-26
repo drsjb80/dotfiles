@@ -2,6 +2,8 @@
 # Shell functions, split out of .bashrc.  Sourced by .bashrc for interactive
 # shells.  Aliases live in .bash_aliases.
 
+echo "Starting in $(basename "${BASH_SOURCE[0]}")"
+
 # --- OS-specific helpers ------------------------------------------------------
 # lshelper backs the ls/la/ll... aliases; o opens a file/dir in the GUI.
 if [[ $(uname) == Darwin ]]; then
@@ -131,5 +133,7 @@ function seconds { (sleep "$@"; echo -ne \\a\\a\\a\\a) & }
 function sc () {
     /Users/stevebeaty/src/schemacrawler-16.10.1-distribution/_schemacrawler/schemacrawler.sh --no-info --command=schema --database="$1" --info-level=standard --server=sqlite --output-format=png --output-file=schema.png
 }
+
+echo "Done with $(basename "${BASH_SOURCE[0]}")"
 
 # vim: wm=0

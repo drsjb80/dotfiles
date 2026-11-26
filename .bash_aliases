@@ -2,6 +2,8 @@
 # Aliases, split out of .bashrc.  Sourced by .bashrc for interactive shells.
 # Functions live in .bash_functions.
 
+echo "Starting in $(basename "${BASH_SOURCE[0]}")"
+
 # --- listing (ls wrappers call the lshelper function in .bash_functions) ---
 alias ls='lshelper'
 alias la='lshelper -a'
@@ -93,5 +95,7 @@ alias j='jobs'
 alias m='less -ReF'
 alias more='less -ReF'
 alias t='tail'
+
+echo "Done with $(basename "${BASH_SOURCE[0]}")"
 
 # vim: wm=0

@@ -8,7 +8,7 @@ if [[ -z "$PS1" ]]; then return; fi
 # is sourced, so `exit` would close the whole terminal)
 if [[ "$BASH_VERSION" != "" && "$BASHRC" == "YES" ]]; then return; fi
 export BASHRC=YES
-echo 'Starting in .bashrc'
+echo "Starting in $(basename "${BASH_SOURCE[0]}")"
 
 # VS Code shell integration
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
@@ -88,4 +88,4 @@ export PATH="$PATH:$HOME/.local/bin"
 [ -f "$HOME/.openclaw/completions/openclaw.bash" ] && source "$HOME/.openclaw/completions/openclaw.bash"
 
 # vim: wm=0
-echo "Done with .bashrc"
+echo "Done with $(basename "${BASH_SOURCE[0]}")"
