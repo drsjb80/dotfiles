@@ -93,6 +93,3 @@ fi
 . "$HOME/.cargo/env"
 
 echo "Done with .bash_profile"
-
-# Created by `pipx` on 2026-01-25 21:55:26
-export PATH="$PATH:/Users/beatys/.local/bin"

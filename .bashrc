@@ -65,11 +65,8 @@ export NVM_DIR="$HOME/.nvm"
 # rust / cargo
 [ -f "$HOME/.cargo/env" ] && . "$HOME/.cargo/env"
 
-# pipx
+# user-installed binaries (pipx, pip --user, etc.)
 export PATH="$PATH:$HOME/.local/bin"
-
-# OpenClaw completion
-[ -f "$HOME/.openclaw/completions/openclaw.bash" ] && source "$HOME/.openclaw/completions/openclaw.bash"
 
 # vim: wm=0
 echo "Done with $(basename "${BASH_SOURCE[0]}")"
