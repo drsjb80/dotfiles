@@ -29,17 +29,15 @@ do
 done
 
 # --- aliases and functions ----------------------------------------------------
-if [[ -r ${HOME}/.bash_aliases ]]
-then
-# shellcheck source=/Users/stevebeaty/.bash_aliases
-    source "${HOME}"/.bash_aliases
-fi
-
-if [[ -r ${HOME}/.bash_functions ]]
-then
-# shellcheck source=/Users/stevebeaty/.bash_functions
-    source "${HOME}"/.bash_functions
-fi
+SOURCES=(
+    "${HOME}/.bash_aliases"
+    "${HOME}/.bash_functions"
+)
+for f in "${SOURCES[@]}"
+do
+    # shellcheck source=/dev/null
+    [[ -r "$f" ]] && source "$f"
+done
 
 # --- machine-local overrides (not in the repo) --------------------------------
 if [[ -r ${HOME}/.bashrc_private ]]
