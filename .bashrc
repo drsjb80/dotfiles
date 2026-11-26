@@ -56,10 +56,6 @@ then
     eval "$(rbenv init -)"
 fi
 
-# added by travis gem
-# shellcheck source=/Users/beatys/.travis/travis.sh
-[ -f /Users/beatys/.travis/travis.sh ] && source /Users/beatys/.travis/travis.sh
-
 export NVM_DIR="$HOME/.nvm"
 # shellcheck source=/Users/stevebeaty/.nvm/nvm.sh
 [ -s "$NVM_DIR/nvm.sh" ] && . "$NVM_DIR/nvm.sh"  # This loads nvm
