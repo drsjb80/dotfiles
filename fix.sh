@@ -153,16 +153,6 @@ function MacSettings () {
     hidutil property --set \
         '{"UserKeyMapping":[{"HIDKeyboardModifierMappingSrc":0x700000039,"HIDKeyboardModifierMappingDst":0x7000000E0}]}' \
         > /dev/null
-
-    # Terminal.app: Solarized Light with a block cursor and an 80x44 window.
-    PROFILE="Solarized Light ansi"
-    if ! defaults read com.apple.Terminal "Window Settings" 2> /dev/null | grep -q "${PROFILE}"
-    then
-        open "${DOTFILES}/SolarizedLight.terminal"
-        sleep 1
-    fi
-    defaults write com.apple.Terminal "Default Window Settings" -string "${PROFILE}"
-    defaults write com.apple.Terminal "Startup Window Settings" -string "${PROFILE}"
 }
 
 function mozilla_prefs () {
