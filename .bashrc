@@ -14,29 +14,19 @@ echo "Starting in $(basename "${BASH_SOURCE[0]}")"
 [[ "$TERM_PROGRAM" == "vscode" ]] && . "$(code --locate-shell-integration-path bash)"
 
 # --- prompt / completion ------------------------------------------------------
-if [[ -r ${HOME}/bin/bash-powerline.sh ]]
-then
-# shellcheck source=/Users/stevebeaty/bin/bash-powerline.sh
-    source "${HOME}"/bin/bash-powerline.sh
-fi
-
-if [[ -r /etc/bash_completion ]]
-then
-# shellcheck source=/etc/bash_completion
-    source /etc/bash_completion
-fi
-
-if [[ -r /opt/homebrew/etc/bash_completion ]]
-then
-# shellcheck source=/opt/homebrew/etc/bash_completion
-    source /opt/homebrew/etc/bash_completion
-fi
-
-if [[ -r /usr/local/etc/bash_completion ]]
-then
-# shellcheck source=/usr/local/etc/bash_completion
-    source /usr/local/etc/bash_completion
-fi
+# Source whichever of these exist: the powerline prompt plus bash completion in
+# the various places Linux / macOS / Homebrew install it.
+SOURCES=(
+    "${HOME}/bin/bash-powerline.sh"
+    /etc/bash_completion
+    /opt/homebrew/etc/bash_completion
+    /usr/local/etc/bash_completion
+)
+for f in "${SOURCES[@]}"
+do
+    # shellcheck source=/dev/null
+    [[ -r "$f" ]] && source "$f"
+done
 
 # --- aliases and functions ----------------------------------------------------
 if [[ -r ${HOME}/.bash_aliases ]]
