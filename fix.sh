@@ -5,7 +5,7 @@
 # shallow clone into ~), so .bashrc, bin/*, .config/autostart/* etc. are
 # already in place -- there is no linking step.  This script only (a) applies
 # desktop/terminal settings and (b) copies the few files that must live
-# outside the home tree (browser userChrome.css, Thunderbird msgFilterRules).
+# outside the home tree (browser userChrome.css).
 
 # dconf watch /
 
@@ -192,26 +192,12 @@ function userChrome () {
     done
 }
 
-function outlook () {
-    for DIR in "${@}"
-    do
-        echo "${DIR}"
-
-        FILE="${DIR}"/msgFilterRules.dat
-        cp -f "${DOTFILES}/msgFilterRules.dat" "${FILE}"
-    done
-
-}
-
 # sigh, see: https://superuser.com/questions/1507251/firefox-has-two-default-profiles-default-release-and-default-which-one-sho
 FF=("${HOME}"/.mozilla/firefox/* "${HOME}"/Library/Application\ Support/Firefox/Profiles/*)
 userChrome "${FF[@]}"
 
 TB=("${HOME}"/.thunderbird/* "${HOME}"/Library/Thunderbird/Profiles/*)
 userChrome "${TB[@]}"
-
-OL=("${HOME}"/.thunderbird/*.default*/webaccountMail/outlook.office365*.com "${HOME}"/Library/Thunderbird/Profiles/*.default*/webaccountMail/outlook.office365*.com)
-outlook "${OL[@]}"
 
 if [[ $(uname) == Linux ]]
 then
